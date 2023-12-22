@@ -31,6 +31,8 @@ def optimize_portfolio(model_type, index_list, asset_index):
 
     # New Weight
     new_weight = model.optimize()
+
+    # TODO: If new_weight is None, means there is no Optimal solution, make evaluation output extreme situation
     if new_weight is None:
         new_weight = last_weight
 
