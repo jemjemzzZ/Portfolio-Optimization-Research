@@ -32,9 +32,11 @@ def optimize_portfolio(model_type, index_list, asset_index):
     # New Weight
     new_weight = model.optimize()
 
-    # TODO: If new_weight is None, means there is no Optimal solution, make evaluation output extreme situation
+    # TODO: If new_weight is None, means there is no Optimal solution, what next?
     if new_weight is None:
-        new_weight = last_weight
+        # return None, (0, 0, 99999)  # Method 1: set to extreme value
+        new_weight = last_weight  # Method 2: use equal weight
+        # Method 3: use max return/sharpe
 
     # Evaluate Result
     evaluation = evaluate(new_weight, tmp_close, risk_free_rate)
@@ -46,7 +48,6 @@ def evaluate(new_weight, tmp_close, risk_free_rate):
     new_weight = np.array(new_weight)
     mu = np.array(tmp_close.tail(1).div(tmp_close.iloc[0], axis=1) ** (1 / (len(tmp_close) / 252)) - 1)[0]
 
-    # expected_return = np.sum(new_weight * mu)
     expected_return = np.dot(mu, new_weight)
     volatility = np.sqrt(
         np.dot(new_weight.T, np.dot(tmp_close.cov(), new_weight)))
