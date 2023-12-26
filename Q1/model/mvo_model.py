@@ -11,7 +11,6 @@ class MVOModel:
         self.risk_free_rate = risk_free_rate
 
     def optimize(self):
-        # Optimization Logic
         new_weight = None
 
         mu = np.array(self.tmp_close.tail(1).div(self.tmp_close.iloc[0], axis=1)

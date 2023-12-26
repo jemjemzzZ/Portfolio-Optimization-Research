@@ -1,4 +1,5 @@
 from model.mvo_model import MVOModel
+from model.risk_parity_model import RPModel
 import numpy as np
 
 
@@ -25,9 +26,11 @@ def optimize_portfolio(model_type, index_list, asset_index):
     # risk-free rate
     risk_free_rate = 0.02
 
-    # Model Initialization
+    # Model Initialization. TODO: Include more models
     if model_type == 'MVO':
         model = MVOModel(tmp_close, target_method, target_return, weight_constraints, risk_free_rate)
+    if model_type == 'RP':
+        model = RPModel(tmp_close, weight_constraints)
 
     # New Weight
     new_weight = model.optimize()
