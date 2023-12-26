@@ -21,7 +21,7 @@ def optimize_portfolio(model_type, index_list, asset_index):
 
     # target
     target_method = 'min_volatility'
-    target_return = 0.2
+    target_return = 0.1
 
     # risk-free rate
     risk_free_rate = 0.02
