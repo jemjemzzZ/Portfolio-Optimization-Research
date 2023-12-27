@@ -1,2 +1,2 @@
 # Portfolio-Optimization-Research
-Some Researches on Portfolio Optmization
+Some Researches on Portfolio Optimization
