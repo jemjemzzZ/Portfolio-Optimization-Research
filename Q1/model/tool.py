@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 import cvxpy as cp
 import warnings
@@ -33,7 +32,7 @@ def get_min_sd(target_return, history_return, cov, bounds):
     constraints = [expected_return >= target_return, cp.sum(weights) == 1, weights >= bounds_min, weights <= bounds_max]
     # Create the problem and solve it
     problem = cp.Problem(objective, constraints)
-    problem.solve()
+    problem.solve(solver=cp.SCS, eps=1e-8)  # Adjust the tolerance level
     # Check if the optimization was successful
     if problem.status == cp.OPTIMAL:
         optimal_weights = weights.value
