@@ -255,7 +255,8 @@ if __name__ == "__main__":
     # Plot each list as a separate line
     plt.figure()
     for line_data, line_name in zip(transposed_list, line_names):
-        plt.plot(line_data, label=line_name)
+        avg_value = np.mean(line_data)
+        plt.plot(line_data, label=f'{line_name} (avg: {avg_value:.5f})')
 
     # Adding labels and title
     plt.xlabel('Tests')
