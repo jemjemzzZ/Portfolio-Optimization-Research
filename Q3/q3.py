@@ -97,7 +97,7 @@ def generate_random_qualified_assets(asset_index, num_limit=[5,10]):
 
     # random generate
     asset_info = {}
-    count = 0
+    count = 1
     count_limit = random.randint(*num_limit)
     ird_codes = list(asset_dfs.keys())
     while count <= count_limit:
