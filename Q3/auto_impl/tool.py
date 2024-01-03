@@ -163,7 +163,7 @@ def generate_random_p_matrix(num_assets, num_views):
             idx1, idx2 = random.sample(range(num_assets), 2)
             P[i, idx1] = 1
             P[i, idx2] = -1
-    
+
     return P
 
 
