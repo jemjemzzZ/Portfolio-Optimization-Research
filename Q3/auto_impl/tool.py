@@ -148,6 +148,34 @@ def generate_random_qualified_assets(asset_dfs,
 
 
 """
+Generate random assets without any limitation on views
+"""
+def generate_random_assets(asset_dfs,
+                           num_limit=[5,10],
+                           start_date='20230901',
+                           end_date='20230928'):
+    asset_info = {}
+    count = 1
+    count_limit = random.randint(*num_limit)
+    ird_codes = list(asset_dfs.keys())
+    
+    while count <= count_limit:
+        ird_code = random.choice(ird_codes)
+        df = asset_dfs[ird_code]
+        
+        try:
+            start_close = df.loc[df['TRADE_DT'] == start_date, 'CLOSE'].values[0]
+            end_close = df.loc[df['TRADE_DT'] == end_date, 'CLOSE'].values[0]
+        except Exception as e:
+            continue
+        
+        asset_info[ird_code] = (start_close, end_close)
+        count += 1
+    
+    return asset_info
+
+
+"""
 Genearte random P matrix
 """
 def generate_random_p_matrix(num_assets, num_views):
@@ -184,21 +212,46 @@ def gram_schmidt(V):
 
 
 """
-Can be orthogonalised
+Check if matrix can be orthogonalised
 """
 def can_be_orthogonalised(P):
     return ~np.isnan(P).any()
 
 
 """
-Generate qualified PQ (orthogonal or not)
+Check if the matrix is orthogonal
 """
-def generate_pq(num_assets, num_views, is_orthogonal, actual_returns):
-    
+def is_orthogonal(matrix, tol=1e-6):
+    if matrix.shape[0] != matrix.shape[1]:
+        return False  # Must be a square matrix
+
+    identity = np.eye(matrix.shape[0])  # Create an identity matrix of the same size
+    return np.allclose(matrix.T @ matrix, identity, atol=tol) and np.allclose(matrix @ matrix.T, identity, atol=tol)
+
+
+"""
+Generate qualified PQ (can be orthogonal or not)
+"""
+def generate_pq(num_assets, num_views, can_be_orthogonal, actual_returns):
     P = generate_random_p_matrix(num_assets, num_views)
     
-    # keep looping until orthogonal or not
-    while can_be_orthogonalised(gram_schmidt(P)) != is_orthogonal:
+    # keep looping
+    while can_be_orthogonalised(gram_schmidt(P)) != can_be_orthogonal:
+        P = generate_random_p_matrix(num_assets, num_views)
+    
+    Q = np.array([np.dot(row, actual_returns) for row in P])
+    
+    return P, Q
+
+
+"""
+Generate orthogonal P with Q
+"""
+def generate_orthogonal_pq(num_assets, num_views, actual_returns):
+    P = generate_random_p_matrix(num_assets, num_views)
+    
+    # keep looping
+    while is_orthogonal(P) == False:
         P = generate_random_p_matrix(num_assets, num_views)
     
     Q = np.array([np.dot(row, actual_returns) for row in P])
@@ -227,10 +280,10 @@ def mse_calculation(asset_info, S, mcaps, delta, num_assets, num_views):
     P_orthogonal_actual, P_random, Q_actual = generate_bl_matrix(asset_info)
     
     # generate non-orthogonal PQ
-    P, Q = generate_pq(num_assets, num_views, is_orthogonal=False, actual_returns=Q_actual)
+    P, Q = generate_pq(num_assets, num_views, can_be_orthogonal=False, actual_returns=Q_actual)
     
-    # generate orthogonal-enable PQ
-    P_can_orthogonal, Q_can_orthogonal = generate_pq(num_assets, num_views, is_orthogonal=True, actual_returns=Q_actual)
+    # generate can-be-orthogonalised PQ
+    P_can_orthogonal, Q_can_orthogonal = generate_pq(num_assets, num_views, can_be_orthogonal=True, actual_returns=Q_actual)
     
     # orthogonalisation
     P_orthogonal = gram_schmidt(P_can_orthogonal)
@@ -265,3 +318,42 @@ def mse_calculation(asset_info, S, mcaps, delta, num_assets, num_views):
     mse_random = mean_squared_error(ret_bl_random, Q_actual)
     
     return (mse_orthogonal_actual, mse_non_orthogonal, mse_orthogonal, mse_can_orthogonal, mse_random)
+
+
+## simple test
+if __name__ == "__main__":
+    print("Test1")
+    P = generate_random_p_matrix(5, 5)
+    print(P)
+    
+    print("Test2")
+    P = generate_random_p_matrix(3, 4)
+    print(P)
+    
+    print("Test3")
+    P, Q = generate_pq(5, 5, True, [0.1, 0.1, 0.1, 0.1, 0.1])
+    print(P)
+    print(Q)
+    
+    print("Test4")
+    P_gs = gram_schmidt(P)
+    Q_gs = np.array([np.dot(row, [0.1, 0.1, 0.1, 0.1, 0.1]) for row in P_gs])
+    print(P_gs)
+    print(Q_gs)
+    print(is_orthogonal(P_gs))
+    
+    print("Test5")
+    P, Q = generate_pq(5, 5, False, [0.1, 0.2, 0.3, 0.4, 0.5])
+    print(P)
+    print(Q)
+    P_gs = gram_schmidt(P)
+    print(P_gs)
+    print(is_orthogonal(P_gs))
+    
+    print("Test6")
+    P, Q = generate_orthogonal_pq(5, 5, [0.1, 0.2, 0.3, 0.4, 0.5])
+    print(P)
+    print(Q)
+    print(is_orthogonal(P))
+    
+    pass
