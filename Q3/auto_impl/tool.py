@@ -267,7 +267,7 @@ def generate_bl_matrix(asset_info):
     
     P_orthogonal = np.eye(len(views))  # individual return & orthogonal
     Q = np.array(list(views.values())).ravel()  # 1D array
-    P_non_orthogonal = np.full((len(views), len(views)), 0.5)  # Example where each view partially affects each asset
+    P_non_orthogonal = np.full((len(views), len(views)), 0.5)  # Example where each view partially affects each asset (non-relative)
     
     return P_orthogonal, P_non_orthogonal, Q
 
@@ -322,6 +322,7 @@ def mse_calculation(asset_info, S, mcaps, delta, num_assets, num_views):
 
 ## simple test
 if __name__ == "__main__":
+    
     print("Test1")
     P = generate_random_p_matrix(5, 5)
     print(P)
@@ -355,5 +356,18 @@ if __name__ == "__main__":
     print(P)
     print(Q)
     print(is_orthogonal(P))
+    
+    print("Test7")
+    asset_info = {
+        'h20025.CSI': (5669.2288, 4705.2669),
+        '399244.SZ': (640.136, 600.1125),
+        '931646CNY01.CSI': (1344.0437, 1247.5575),
+        'h40006.SH': (5912.7329, 6335.0402),
+        '983087.CNI': (4835.5539, 4471.1056)
+    }
+    P, P_random, Q = generate_bl_matrix(asset_info)
+    print(P)
+    print(P_random)
+    print(Q)
     
     pass
