@@ -2,6 +2,7 @@ import numpy as np
 from model.mvo_model import MVOModel
 from model.risk_parity_model import RPModel
 from model.bl_model import BLModel
+from model.risk_budget_model import RBModel
 
 
 def evaluate(historical_data, 
@@ -22,6 +23,8 @@ def evaluate(historical_data,
     if model_type == 'BL':
         target_method = 'min_volatility'
         model = BLModel(historical_data, target_method, target_return, weight_constraints, risk_free_rate, future_data)
+    if model_type == 'RB':
+        model = RBModel(historical_data, weight_constraints, future_data)
     
     new_weight = model.optimize()
 
