@@ -29,7 +29,6 @@ def evaluate(historical_data,
     new_weight = model.optimize()
 
     if new_weight is None:
-        print("No solutions")
         new_weight = last_weight
 
     predict = check(new_weight, historical_data, risk_free_rate)
