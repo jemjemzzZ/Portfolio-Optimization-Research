@@ -33,7 +33,7 @@ def get_min_sd(target_return, history_return, cov, bounds):
     # Create the problem and solve it
     problem = cp.Problem(objective, constraints)
     # problem.solve(solver=cp.SCS, eps=1e-8)  # Adjust the tolerance level
-    problem.solve
+    problem.solve()
     # Check if the optimization was successful
     if problem.status == cp.OPTIMAL:
         optimal_weights = weights.value
