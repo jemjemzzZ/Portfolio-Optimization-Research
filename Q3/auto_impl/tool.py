@@ -19,6 +19,18 @@ def find_turning_point(df,
                        threshold_day=22, 
                        threshold_rate=0.05):
     
+    """寻找资产CLOSE曲线的显著转折点，包括上涨下跌。
+    其核心逻辑为从某一时间点开始，持续向后判断是否有连续变化，直到不满足输入条件。
+
+    :param df: 资产数据
+    :param direction: 变化方向为上升(1)或者下降(-1)
+    :param n_days: n天内有存在变化, defaults to 7
+    :param fraction_movement: n天内的变化幅度阈值, defaults to 0.01
+    :param threshold_day: 整体变化时间长度最低限制, defaults to 22
+    :param threshold_rate: 整体变化幅度最低限制, defaults to 0.05
+    :return: 返回List，其包含多段变化时间区间，以数组形式呈现，(start_date, end_date)
+    """    
+    
     df = df.reset_index(drop=True)
     record = []
     
@@ -64,6 +76,19 @@ def select_asset(ird_code,
                  threshold_rate=0.05, 
                  start_date='20230901',
                  tolerance_days=5):
+    
+    """选择满足要求的变化区间，通过使用find_turning_point()
+
+    :param ird_code: 资产代码(未使用)
+    :param df: 资产数据
+    :param fraction_movement: 见find_turning_point(), defaults to 0.01
+    :param threshold_day: 见find_turning_point(), defaults to 22
+    :param n_days: 见find_turning_point(), defaults to 7
+    :param threshold_rate: 见find_turning_point(), defaults to 0.05
+    :param start_date: 变化的起始时间, defaults to '20230901'
+    :param tolerance_days: 起始时间的可调整范围，+-N天, defaults to 5
+    :return: 返回两个List，第一个列表为上升变化的多个时间区间，第二个列表为下降变化的多个时间区间
+    """    
     
     date_record_up = find_turning_point(
         df, direction=1, fraction_movement=fraction_movement, threshold_day=threshold_day, n_days=n_days, threshold_rate=threshold_rate)
@@ -122,6 +147,19 @@ def generate_random_qualified_assets(asset_dfs,
                                      start_date='20230901',
                                      tolerance_days=5):
     
+    """随机生成多个符合变化要求的资产的变化时间段
+
+    :param asset_dfs: 多个资产数据
+    :param num_limit: 随机生成数量范围, defaults to [5,10]
+    :param fraction_movement: 见select_asset(), defaults to 0.01
+    :param threshold_day: 见select_asset(), defaults to 22
+    :param n_days: 见select_asset(), defaults to 7
+    :param threshold_rate: 见select_asset(), defaults to 0.05
+    :param start_date: 见select_asset(), defaults to '20230901'
+    :param tolerance_days: 见select_asset(), defaults to 5
+    :return: 返回字典，key为每个资产代码，value为每个资产的变化信息：（start_close_price, end_close_price）
+    """    
+    
     # random generate
     asset_info = {}
     count = 1
@@ -154,6 +192,16 @@ def generate_random_assets(asset_dfs,
                            num_limit=[5,10],
                            start_date='20230901',
                            end_date='20230928'):
+    
+    """随机挑选多个资产
+
+    :param asset_dfs: 多个资产数据
+    :param num_limit: 随机生成数量范围_, defaults to [5,10]
+    :param start_date: 变化起点时间, defaults to '20230901'
+    :param end_date: 变化截止时间, defaults to '20230928'
+    :return: 返回字典，key为每个资产代码，value为每个资产的变化信息：（start_close_price, end_close_price）
+    """    
+    
     asset_info = {}
     count = 1
     count_limit = random.randint(*num_limit)
@@ -179,6 +227,14 @@ def generate_random_assets(asset_dfs,
 Genearte random P matrix
 """
 def generate_random_p_matrix(num_assets, num_views):
+    
+    """随机生成规范的观点矩阵P
+
+    :param num_assets: 资产数量
+    :param num_views: 观点数量
+    :return: 观点矩阵P
+    """    
+    
     P = np.zeros((num_views, num_assets))
     
     for i in range(num_views):
@@ -199,6 +255,13 @@ def generate_random_p_matrix(num_assets, num_views):
 Matrix orthogonalisation (gram schmidt)
 """
 def gram_schmidt(V):
+    
+    """矩阵正交化处理
+
+    :param V: 矩阵
+    :return: 正交化后结果
+    """    
+    
     U = np.copy(V).astype(np.float64)
     
     for i in range(1, V.shape[0]):
@@ -215,6 +278,13 @@ def gram_schmidt(V):
 Check if matrix can be orthogonalised
 """
 def can_be_orthogonalised(P):
+    
+    """判断矩阵是否可以被正交化
+
+    :param P: 待检验矩阵
+    :return: 是否可被正交化
+    """    
+    
     return ~np.isnan(P).any()
 
 
@@ -222,6 +292,14 @@ def can_be_orthogonalised(P):
 Check if the matrix is orthogonal
 """
 def is_orthogonal(matrix, tol=1e-6):
+    
+    """判断矩阵是否是正交矩阵（测试用）
+
+    :param matrix: 待验矩阵
+    :param tol: tolerance, defaults to 1e-6
+    :return: 是否正交
+    """    
+    
     if matrix.shape[0] != matrix.shape[1]:
         return False  # Must be a square matrix
 
@@ -233,6 +311,16 @@ def is_orthogonal(matrix, tol=1e-6):
 Generate qualified PQ (can be orthogonal or not)
 """
 def generate_pq(num_assets, num_views, can_be_orthogonal, actual_returns):
+    
+    """根据实际回报随机生成合理的P,Q矩阵
+
+    :param num_assets: 资产数量
+    :param num_views: 观点数量
+    :param can_be_orthogonal: P是否需要可被正交化
+    :param actual_returns: 资产的实际汇报
+    :return: P,Q矩阵
+    """    
+    
     P = generate_random_p_matrix(num_assets, num_views)
     
     # keep looping
@@ -248,6 +336,15 @@ def generate_pq(num_assets, num_views, can_be_orthogonal, actual_returns):
 Generate orthogonal P with Q
 """
 def generate_orthogonal_pq(num_assets, num_views, actual_returns):
+    
+    """生成正交P,Q矩阵，根据实际回报（测试用）
+
+    :param num_assets: 资产数量
+    :param num_views: 观点数量
+    :param actual_returns: 实际回报
+    :return: 正交的P，以及对应Q
+    """    
+    
     P = generate_random_p_matrix(num_assets, num_views)
     
     # keep looping
@@ -263,6 +360,14 @@ def generate_orthogonal_pq(num_assets, num_views, actual_returns):
 Genearte actual BL table based on asset info
 """
 def generate_bl_matrix(asset_info):
+    
+    """根据资产实际信息，生成标准P，Q.
+    其中P为单位矩阵，即每一资产的独立变化信息。
+
+    :param asset_info: 多个资产变化信息，字典
+    :return: 标准P,Q,以及一个无相关性P(用于测试)
+    """    
+    
     views = {asset: (final - initial) / initial for asset, (initial, final) in asset_info.items()}
     
     P_orthogonal = np.eye(len(views))  # individual return & orthogonal
@@ -276,6 +381,18 @@ def generate_bl_matrix(asset_info):
 Auto MSE calculation
 """
 def mse_calculation(asset_info, S, mcaps, delta, num_assets, num_views):
+    
+    """计算各种情况P，Q在经过BL计算的，与实际回报的MSE比较
+
+    :param asset_info: 多个资产信息
+    :param S: 历史波动
+    :param mcaps: 市场权重
+    :param delta: risk aversion parameter
+    :param num_assets: 资产数量
+    :param num_views: 观点数量
+    :return: 各种不同情况的P对应的MSE数值
+    """    
+    
     # generate P_orthogonal_actual, Q_actual (actual returns)
     P_orthogonal_actual, P_random, Q_actual = generate_bl_matrix(asset_info)
     
