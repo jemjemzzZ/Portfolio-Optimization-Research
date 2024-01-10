@@ -26,7 +26,11 @@ def evaluate(historical_data,
     if model_type == 'RB':
         model = RBModel(historical_data, weight_constraints, future_data)
     
-    new_weight = model.optimize()
+    try:
+        new_weight = model.optimize()
+    except Exception as e:
+        print(f'{model_type} model fails!')
+        new_weight = None
 
     if new_weight is None:
         new_weight = last_weight
