@@ -30,11 +30,16 @@ class RBModel:
             daily_returns = risk_alloc_data.pct_change().dropna()
             volatility = daily_returns.std()
         
-        # risk normalisation from volatility
+        # risk allocation from volatility
         normalized_risk = volatility / volatility.sum()
         return normalized_risk
     
     def predict_volatility(self, returns):
+        """
+        using arch package:
+        https://arch.readthedocs.io/en/latest/univariate/introduction.html#arch.univariate.arch_model.vol
+        https://arch.readthedocs.io/en/latest/univariate/univariate_volatility_modeling.html#GARCH-(with-a-Constant-Mean)
+        """
         num_assets = returns.shape[1]
         future_volatilities = []
         
