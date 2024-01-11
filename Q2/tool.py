@@ -40,8 +40,8 @@ def evaluate(historical_data,
     if new_weight is None:
         new_weight = last_weight
 
-    predict = check(new_weight, historical_data, risk_free_rate)
-    actual = check(new_weight, future_data, risk_free_rate)
+    predict = check(new_weight, historical_data, risk_free_rate) # model prediction
+    actual = check(new_weight, future_data, risk_free_rate) # actual with model output weights
     
     return predict, actual
 

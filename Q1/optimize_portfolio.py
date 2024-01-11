@@ -1,17 +1,14 @@
 from model.mvo_model import MVOModel
 from model.risk_parity_model import RPModel
+from model.risk_budget_model import RBModel
 import numpy as np
 
 
 def optimize_portfolio(
-        model_type, index_list, asset_index, data_end_date, backtest_day, target_return, risk_free_rate):
-    # Process dataset
-    asset_index = asset_index.loc[:data_end_date]
-    asset_index = asset_index.pivot(index='TRADE_DT', columns='INDEX_CODE', values='CLOSE').ffill()[index_list]
-    n = asset_index.shape[1]
-    tmp_close = asset_index.tail(backtest_day)
+        model_type, tmp_close, target_return, risk_free_rate):
 
     # Weight bounds
+    n = tmp_close.shape[1]
     last_weight = [1 / n for _ in range(n)]  # equally weighed
     index_min_weight = [0 for _ in range(n)]
     index_max_weight = [1 for _ in range(n)]
@@ -23,6 +20,8 @@ def optimize_portfolio(
         model = MVOModel(tmp_close, target_method, target_return, weight_constraints, risk_free_rate)
     if model_type == 'RP':
         model = RPModel(tmp_close, weight_constraints)
+    if model_type == 'RB': # use historical data for risk allocation
+        model = RBModel(tmp_close, weight_constraints)
 
     # Run model
     new_weight = model.optimize()
@@ -30,7 +29,7 @@ def optimize_portfolio(
     # No optimal solution
     if new_weight is None:
         new_weight = last_weight  # Method 1: use equal weight
-        # return None, (0, 0, 99999)  # Method 2: set to extreme value
+        # return None, (-99999, -99999, 99999)  # Method 2: set to extreme value
         # Method 3: use max return/sharpe
 
     # Evaluate solution
