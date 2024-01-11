@@ -15,22 +15,25 @@ def evaluate(historical_data,
     n = historical_data.shape[1]
     last_weight = [1 / n for _ in range(n)]
     
-    if model_type == 'MVO':
+    if model_type == 'MVO': # mean-variance optimization model
         target_method = 'min_volatility'
         model = MVOModel(historical_data, target_method, target_return, weight_constraints, risk_free_rate)
-    if model_type == 'RP':
+    if model_type == 'RP': # risk parity model
         model = RPModel(historical_data, weight_constraints)
-    if model_type == 'BL':
+    if model_type == 'BL': # Black-Litterman model
         target_method = 'min_volatility'
         model = BLModel(historical_data, target_method, target_return, weight_constraints, risk_free_rate, future_data)
     if model_type == 'RB': # use future data to calculate risk allocation
         model = RBModel(historical_data, weight_constraints, future_data, risk_alloc_method=0)
     if model_type == 'RB-H': # use historical data to calculate risk allocation
         model = RBModel(historical_data, weight_constraints, future_data, risk_alloc_method=1)
+    if model_type == 'RB-G': # use GARCH model to predict risk allocation
+        model = RBModel(historical_data, weight_constraints, future_data, risk_alloc_method=2)
     
     try:
         new_weight = model.optimize()
     except Exception as e:
+        print(e)
         print(f'{model_type} model fails!')
         new_weight = None
 
