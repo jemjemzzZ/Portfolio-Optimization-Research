@@ -50,7 +50,7 @@ class MyProblem(ea.Problem):  # 继承Problem父类
         Dim = 4  # 初始化Dim（决策变量维数）
         varTypes = [0] * Dim  # 初始化varTypes（决策变量的类型，元素为0表示对应的变量是连续的；1表示是离散的）
         lb = [0, 0, 0, 0]  # 决策变量下界
-        ub = [0.3, 0.3, 0.8,0.8]  # 决策变量上界
+        ub = [1, 1, 1, 1]  # 决策变量上界
         lbin = [1, 1, 1,1]  # 决策变量下边界（0表示不包含该变量的下边界，1表示包含）
         ubin = [1, 1, 1,1]  # 决策变量上边界（0表示不包含该变量的上边界，1表示包含）
         # 调用父类构造方法完成实例化
@@ -67,16 +67,20 @@ class MyProblem(ea.Problem):  # 继承Problem父类
 
     def evalVars(self, Vars):  # 目标函数
         x1 = Vars[:, [0]]
+        filtered_x1 = np.where(x1 != 0, x1, 1)
         x2 = Vars[:, [1]]
+        filtered_x2 = np.where(x2 != 0, x2, 1)
         x3 = Vars[:, [2]]
+        filtered_x3 = np.where(x3 != 0, x3, 1)
         x4 = Vars[:, [3]]
-        f = x1 * x2 * x3 * x4
+        filtered_x4 = np.where(x4 != 0, x4, 1)
+        f = filtered_x1 * filtered_x2 * filtered_x3 * filtered_x4
         print(f)
         # 采用可行性法则处理约束
         # CV = np.hstack(
         #     [x1 + x2 - 0.3,0.2-x1-x2,x3 + x4 - 0.8,0.7-x3-x4,x2-x1,x4-x3, np.abs(x1 + x2 + x3 + x4 - 1)])
         CV = np.hstack(
-            [np.abs(constraint(Vars)[0] - 3), np.abs(constraint(Vars)[1] - 1)])
+            [np.abs(constraint(Vars)[0] - 1), np.abs(constraint(Vars)[1] - 1)])
         return f, CV
 
     def calReferObjV(self):  # 设定目标数参考值（本问题目标函数参考值设定为理论最优值）
