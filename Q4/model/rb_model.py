@@ -22,9 +22,9 @@ class RBModel:
         return new_weight
     
     def get_weight(self, cov, risk_alloc):
-        if self.get_weight == 0:
+        if self.solution_method == 0:
             new_weight, _ = runRBSLSQP(cov=cov, risk_alloc=risk_alloc, bounds=self.weight_constraints)
-        elif self.get_weight == 1:
+        elif self.solution_method == 1:
             new_weight, _ = runRBGA(cov=cov, risk_alloc=risk_alloc, bounds=self.weight_constraints)
             new_weight = new_weight[0]
         

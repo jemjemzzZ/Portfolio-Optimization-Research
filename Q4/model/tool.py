@@ -1,10 +1,12 @@
 import numpy as np
 import geatpy as ea
 
-import cvxpy as cp
 import warnings
 from scipy.optimize import minimize
 warnings.filterwarnings('ignore')
+
+from deap import base, creator, tools, algorithms
+import random, time
 
 
 class RBwithGA(ea.Problem):
@@ -94,7 +96,7 @@ def runRBGA(cov, risk_alloc, bounds):
     algorithm.recOper.XOVR = 0.7
     
     res = ea.optimize(algorithm,
-                      verbose=False,
+                      verbose=True,
                       drawing=0,
                       outputMsg=False,
                       drawLog=False,
@@ -102,6 +104,86 @@ def runRBGA(cov, risk_alloc, bounds):
     
     # print(res)
     return res['Vars'], res['ObjV']
+
+
+
+def runRBGAwithDEAP(cov, risk_alloc):
+    num_assets = len(cov)
+    
+    def evaluate(individual):
+        if not feasible(individual):
+            repair(individual)
+        
+        cov_matrix = np.array(cov)
+        
+        def volatility(weights):
+            weights = np.array(weights)
+            vol = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
+            return vol
+
+        def risk_contribution(weights):
+            weights = np.array(weights)
+            vol = volatility(weights)
+            mrc = np.dot(cov_matrix, weights) / vol
+            trc = np.multiply(mrc, weights)
+            return trc
+
+        def risk_parity(weights):
+            vol = volatility(weights)
+            risk_target_pct = np.array(risk_alloc)
+            risk_target = np.multiply(vol, risk_target_pct)
+            trc = risk_contribution(weights)
+            J = np.sqrt(sum(np.square(trc - risk_target)))
+            return J
+        
+        return risk_parity(individual), 
+    
+    def feasible(individual):
+        return sum(individual) == 1 and all(0 <= x <= 1 for x in individual)
+    
+    def repair(individual):
+        total = sum(individual)
+        if total != 0:
+            individual[:] = [x / total for x in individual]
+        else:
+            individual[:] = [1/len(individual) for _ in len(individual)]
+        return individual
+    
+    def mutUniformFloat(individual, low, up, indpb):
+        for i in range(len(individual)):
+            if random.random() < indpb:
+                individual[i] = random.uniform(low, up)
+        return individual,
+    
+    # Setup DEAP
+    creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+    creator.create("Individual", list, fitness=creator.FitnessMin)
+
+    toolbox = base.Toolbox()
+    toolbox.register("attr_float", random.random)
+    toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_float, n=num_assets)
+    toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+    toolbox.register("evaluate", evaluate)
+    toolbox.register("mate", tools.cxOnePoint)
+    toolbox.register("mutate", mutUniformFloat, low=0, up=1, indpb=0.2)
+    toolbox.register("select", tools.selTournament, tournsize=3)
+
+    def main():
+        pop = toolbox.population(n=500)
+        hof = tools.HallOfFame(1)
+        stats = tools.Statistics(lambda ind: ind.fitness.values)
+        stats.register("min", min)
+        algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2, ngen=1000000, stats=stats, halloffame=hof)
+        return hof[0]
+
+    start_time = time.time()
+    best_ind = main()
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Elapsed time: {elapsed_time} seconds")
+    print("Best Individual:", best_ind, "Fitness:", best_ind.fitness.values[0])
+    
+    return best_ind, best_ind.fitness.values[0]
 
 
 
@@ -181,3 +263,9 @@ if __name__ == "__main__":
     print(weights_two)
     print(performance_two)
     print("=======================TEST TWO=======================")
+    
+    # print("=======================TEST Three=======================")
+    # weights_three, performance_three = runRBGAwithDEAP(cov, risk_alloc)
+    # print(weights_three)
+    # print(performance_three)
+    # print("=======================TEST Three=======================")
