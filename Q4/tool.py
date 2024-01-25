@@ -1,6 +1,9 @@
 import numpy as np
 from model.rb_model import RBModel
 
+import warnings
+warnings.filterwarnings('ignore')
+
 
 def evaluate(historical_data, 
           future_data, 
@@ -17,6 +20,7 @@ def evaluate(historical_data,
     if model_type == 'RB-GA':
         model = RBModel(historical_data, weight_constraints, future_data, solution_method=1)
     
+    # new_weight = model.optimize()
     try:
         new_weight = model.optimize()
     except Exception as e:
@@ -30,10 +34,10 @@ def evaluate(historical_data,
     predict = check(new_weight, historical_data, risk_free_rate) # model prediction
     actual = check(new_weight, future_data, risk_free_rate) # actual with model output weights
     
-    return predict, actual
+    return predict, actual, new_weight
 
 
-def check(weight, tmp_close, risk_free_rate):
+def check(weight, tmp_close, risk_free_rate=0.02):
     weight = np.array(weight)
     mu = np.array(tmp_close.tail(1).div(tmp_close.iloc[0], axis=1) ** (1 / (len(tmp_close) / 252)) - 1)[0]
 

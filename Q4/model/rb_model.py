@@ -2,6 +2,9 @@ import numpy as np
 from .tool import runRBGA, runRBSLSQP
 from arch import arch_model
 
+import warnings
+warnings.filterwarnings('ignore')
+
 
 class RBModel:
     def __init__(self, tmp_close, weight_constraints, actual_data, solution_method=0):

@@ -96,7 +96,7 @@ def runRBGA(cov, risk_alloc, bounds):
     algorithm.recOper.XOVR = 0.7
     
     res = ea.optimize(algorithm,
-                      verbose=True,
+                      verbose=False,
                       drawing=0,
                       outputMsg=False,
                       drawLog=False,
