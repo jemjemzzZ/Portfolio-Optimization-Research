@@ -1,6 +1,7 @@
 import random
 import numpy as np
 from deap import base, creator, tools, algorithms
+import geatpy as ea
 
 import tool
 
@@ -9,7 +10,7 @@ class GAModel:
         self.historical_data = historical_data.copy()
         self.future_data = future_data.copy()
         self.model_type = model_type
-        self.unique_assets = historical_data.columns()
+        self.unique_assets = historical_data.columns
         
     def evaluate(self, individual):
         selected_assets = [asset for asset, include in zip(self.unique_assets, individual) if include]
@@ -25,7 +26,7 @@ class GAModel:
         index_max_weight = [1 for _ in range(n)]
         weight_constraints = list(zip(index_min_weight, index_max_weight))
         
-        predict, _, _ = tool.evaluate(historical_data, future_data, weight_constraints, self.model_type)
+        predict, _, _ = tool.evaluate(historical_data, future_data, weight_constraints, 'RB-SLSQP')
         expected_return, volatility, sharpe_ratio = predict
         
         return expected_return, sharpe_ratio, volatility
@@ -65,7 +66,7 @@ class GAModel:
             
             return pop, hof, stats, logbook
         
-        population, pareto_front, stats, logbook = run_ga(50, 200)
+        population, pareto_front, stats, logbook = run_ga(50, 10)
 
         pareto_front = [ind for ind in pareto_front if not all(x == 0 for x in ind)]
         def get_calculations(individual):
@@ -79,7 +80,7 @@ class GAModel:
             index_max_weight = [1 for _ in range(n)]
             weight_constraints = list(zip(index_min_weight, index_max_weight))
             
-            predict, actual, weight = tool.evaluate(historical_data, future_data, weight_constraints, self.model_type)
+            predict, actual, weight = tool.evaluate(historical_data, future_data, weight_constraints, 'RB-SLSQP')
             
             return predict, actual, weight, selected_assets
 
@@ -120,14 +121,92 @@ def evaluate(predicts, actuals, model_type):
                 min_volatility = vol
                 min_index = i
         return predicts[min_index], actuals[min_index]
-    elif model_type == 'RB-GA-CS':
-        min_volatility = float('inf')
-        cs_index = -1
-        for i, (ret, vol, sharpe) in enumerate(predicts):
-            if vol < min_volatility and ret >= 0:
-                min_volatility = vol
-                cs_index = i
-        return predicts[cs_index], actuals[cs_index]
-        pass
     
     return None, None
+
+
+"""
+Version 2 with Geatpy
+"""
+class GAMultiProblem(ea.Problem):
+    
+    def __init__(self, historical_data, future_data, M=3):
+        self.historical_data = historical_data.copy()
+        self.future_data = future_data.copy()
+        self.unique_assets = historical_data.columns
+        
+        name = 'GA multi'
+        Dim = len(self.unique_assets)
+        maxormins = [-1, -1, 1] # return, sharpe, vol
+        varTypes = [1] * Dim
+        lb = [0] * Dim
+        ub = [1] * Dim
+        lbin = [1] * Dim
+        ubin = [1] * Dim
+        
+        ea.Problem.__init__(self,
+                            name,
+                            M,
+                            maxormins,
+                            Dim,
+                            varTypes,
+                            lb,
+                            ub,
+                            lbin,
+                            ubin)
+        
+    def constraint(self, Vars):
+        w_sum = np.zeros((Vars.shape[0], 1))
+        
+        for i in range(Vars.shape[0]):
+            rows = Vars[i, :]
+            w_sum[i] = np.sum(rows)
+        
+        return w_sum
+        
+    def evalVars(self, Vars):
+        f_ret = np.zeros((Vars.shape[0], 1))
+        f_sha = np.zeros((Vars.shape[0], 1))
+        f_vol = np.zeros((Vars.shape[0], 1))
+        
+        f = np.ones((Vars.shape[0], 1))
+        for i in range(Vars.shape[0]):
+            rows = Vars[i, :]
+            for j in range(len(rows)):
+                individual = rows[j]
+                
+                selected_assets = [asset for asset, include in zip(self.unique_assets, individual) if include]
+                historical_data = self.historical_data[self.historical_data.columns[self.historical_data.columns.isin(selected_assets)]]
+                future_data = self.future_data[self.future_data.columns[self.future_data.columns.isin(selected_assets)]]
+                n = len(selected_assets)
+                index_min_weight = [0 for _ in range(n)]
+                index_max_weight = [1 for _ in range(n)]
+                weight_constraints = list(zip(index_min_weight, index_max_weight))
+                predict, actual, weight = tool.evaluate(historical_data, future_data, weight_constraints, 'RB-SLSQP')
+                
+                f_ret[i], f_vol[i], f_sha[i] = predict
+            
+        CV = np.hstack([1 - self.constraint(Vars)])
+        f = np.hstack([f_ret, f_sha, f_vol])
+        
+        return f, CV
+
+
+def runGA(historical_data, future_data):
+    problem = GAMultiProblem(historical_data, future_data)
+    
+    algorithm = ea.moea_NSGA2_templet(problem,
+                                      ea.Population(Encoding='RI', NIND=50),
+                                      MAXGEN=200,
+                                      logTras=100)
+    algorithm.mutOper.Pm = 0.2
+    algorithm.recOper.XOVR = 0.9
+    
+    res = ea.optimize(algorithm,
+                      verbose=True,
+                      drawing=0,
+                      outputMsg=False,
+                      drawLog=False,
+                      saveFlag=False)
+    
+    print(res)
