@@ -13,7 +13,7 @@ def evaluate(historical_data,
           risk_free_rate=0.02):
     
     n = historical_data.shape[1]
-    last_weight = [1 / n for _ in range(n)]
+    last_weight = [1 / n for _ in range(n)] # equal-weight
     
     if model_type == 'MVO': # mean-variance optimization model
         target_method = 'min_volatility'
@@ -31,7 +31,7 @@ def evaluate(historical_data,
         model = RBModel(historical_data, weight_constraints, future_data, risk_alloc_method=2)
     
     try:
-        new_weight = model.optimize()
+        new_weight = model.optimize() # run model
     except Exception as e:
         print(e)
         print(f'{model_type} model fails!')
