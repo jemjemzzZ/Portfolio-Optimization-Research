@@ -1,3 +1,8 @@
+"""
+Using multi-processing to improve the performance of GA from DEAP package.
+"""
+
+
 from deap import base, creator, tools, algorithms
 import random, multiprocessing, time
 
